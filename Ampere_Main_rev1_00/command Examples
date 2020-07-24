@@ -1,0 +1,17 @@
+<INTm>1000<----> //set interval to 1s
+<INTm>100<----> //set interval to 0.1s
+
+<MODE>1<----> //set mode to current (codes defined in ampgui.h)
+<VALm>1000<----> //set Current to 1A
+<STRT><----> //turn on output
+<STOP><----> //turn off output
+
+<OVER><----> //Override control from GUI
+<RELS><----> //Give GUI control again
+
+<VALm>0<---->
+
+<VALm>1000<---->
+<VALm>2000<---->
+<VALm>4000<---->
+<VALm>6000<---->
