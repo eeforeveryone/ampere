@@ -161,3 +161,14 @@
   #define MAIN_PMAX 275000 //275,000 mW (275W)
   //====== ELECT. LIMITS====================//
 #endif
+
+#ifdef HW_REV__AMP03_A //Community Edition
+  #define MAIN_LED_PIN 2 //pin for debug led
+  #define NUM_LOADS 2 //number of electronic loads
+
+  //====== ELECT. LIMITS====================//
+  #define MAIN_IMAX 10000   //10,000 mA (10A)
+  #define MAIN_VMAX 60000   //60,000 mV (60V)
+  #define MAIN_PMAX 300000 //300,000 mW (300W)
+  //====== ELECT. LIMITS====================//
+#endif

@@ -82,7 +82,7 @@ for(int i = 0; i<AMPGUI_NUM_BUTTONS; i++){ //reset all buttons
   self->time_ms = 0;
 
   self->screentype = 0;
-  self->screen_selection = 0; //stores current selection
+  self->screen_selection = AMPGUI_SEL_I; //stores current selection, deafault to current
   self->opt_index = 0; //stores opt index (opt Array)
   
   self->ext_mV = 0;
@@ -298,7 +298,7 @@ void ampgui__update(struct ampgui *self, uint32_t ms, bool passive){ //Reacts to
         if(ampgui__button_getPush(self, AMPGUI_UP)){            //UP BUTTON PRESSED
           self->screen_selection = self->screen_selection -1;   //Up one row (Selection -1)
   
-          if(self->screen_selection < AMPGUI_SEL_V){ //reset on underflow
+          if(self->screen_selection < AMPGUI_SEL_I){ //reset on underflow
             self->screen_selection = AMPGUI_SEL_P;
           }
           
@@ -308,7 +308,7 @@ void ampgui__update(struct ampgui *self, uint32_t ms, bool passive){ //Reacts to
           self->screen_selection = self->screen_selection +1;   //Down one row (Selection +1)
           
           if(self->screen_selection > AMPGUI_SEL_P){ //reset on overflow
-            self->screen_selection = AMPGUI_SEL_V;
+            self->screen_selection = AMPGUI_SEL_I;
           }
         }
       
