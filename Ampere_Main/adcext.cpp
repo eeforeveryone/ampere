@@ -93,7 +93,7 @@ uint8_t lowerdata = 0;
 
   }
 
-  Serial.printf("SPIID: %i. Upper: %i. Lower: %i.\n", self->spi_id, upperdata, lowerdata);
+  //Serial.printf("SPIID: %i. Upper: %i. Lower: %i.\n", self->spi_id, upperdata, lowerdata);
 
   uint16_t data = (upperdata<<8)+lowerdata;
 

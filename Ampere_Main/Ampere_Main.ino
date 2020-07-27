@@ -64,8 +64,8 @@
 
 #include "ampserial.h" //Serial Control object
 
-//#define HW_REV__AMP01_A   //This is the dev kit
-#define HW_REV__AMP02_A     //This is the 4-up Controller
+#define HW_REV__AMP01_A   //This is the dev kit
+//#define HW_REV__AMP02_A     //This is the 4-up Controller
 //#define HW_REV__AMP03_A   //This is the Community Edition Controller!
 #include "HW_pinMapping.h" //Configure Pins
 

@@ -7,7 +7,7 @@
 
 #ifdef HW_REV__AMP01_A //Dev Kit
   #define MAIN_LED_PIN 2 //pin for debug led
-  #define NUM_LOADS 4 //number of electronic loads
+  #define NUM_LOADS 1 //number of electronic loads
 
   //====== AMP1 SETUP =======================//
     //====== ADC SETUP =======================//
@@ -17,7 +17,7 @@
     
     #define MAIN_IADC_CS 8 //CS for Current ADC is on pin 8
     #define MAIN_IADC_VREF_mV 1666 //reference voltage for Vadc
-    #define MAIN_IADC_CUSTOM_SCALE 40.0 //custom scaliing factor to translate voltage to amps in
+    #define MAIN_IADC_CUSTOM_SCALE 20.0 //custom scaliing factor to translate voltage to amps in
   
     #define MAIN_ADC_BITS 10 //max counts for the ADCs on this hardware
     //====== ADC SETUP =======================//
