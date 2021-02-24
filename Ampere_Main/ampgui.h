@@ -6,6 +6,7 @@
 
 #include "Arduino.h"
 #include "screen.h"
+#include <Encoder.h>
 
 // ensure this library description is only included once
 #ifndef SRC_AMPGUI_H
@@ -14,7 +15,7 @@
 #define AMPGUI_BUTTON_ACTIVE_STATE false //logical button signal state when button is pressed
 #define AMPGUI_BUTTON_PUSH_TIME 10 //time state must be held, to be considered "pushed" - ms
 #define AMPGUI_BUTTON_HOLD_TIME 500 //time state must be held, to be considered "held" - ms
-#define AMPGUI_NUM_BUTTONS 6
+#define AMPGUI_NUM_BUTTONS 7
 
 #define AMPGUI_OPT1     0 //map to array position
 #define AMPGUI_OPT2     1 //map to array position
@@ -22,6 +23,7 @@
 #define AMPGUI_UP       3 //map to array position
 #define AMPGUI_DOWN     4 //map to array position
 #define AMPGUI_ENTER    5 //map to array position
+#define AMPGUI_ENC      6 //map to array position
 
 #define AMPGUI_SEL_V 0 //map row 0 to volts
 #define AMPGUI_SEL_I 1 //map row 1 to amps
@@ -45,6 +47,7 @@ struct gui_button;
 /**************CONSTRUCTORS AND DESTRUCTORS**************/
 struct ampgui* ampgui__create(struct screen* screen_obj, int maxChannels, int upPin, int downPin, int enterPin, int opt1Pin, int opt2Pin, int opt3Pin); //constructor
 void ampgui__init(struct ampgui *self, struct screen* screen_obj, int maxChannels, int upPin, int downPin, int enterPin, int opt1Pin, int opt2Pin, int opt3Pin); //modifier (empty)
+void ampgui__startEncoder(struct ampgui *self, Encoder *enc, int button); //start encoder
 void ampgui__destroy(struct ampgui *self); //destructor
 
 /**************MEMBER FUNCTIONS**************************/

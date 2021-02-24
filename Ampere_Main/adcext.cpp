@@ -30,8 +30,15 @@ struct adcext* adcext__create(int CS_PIN, uint16_t NUM_AVG, uint16_t VREF_MV, fl
   
   struct adcext* result = (struct adcext*) malloc(sizeof(struct adcext)); //alocate memory, typecast to adcext struct.
 
-  digitalWrite(CS_PIN, HIGH);
-  pinMode(CS_PIN, OUTPUT);
+
+  if(spi_id > -1){ //use as SPI CS!
+    digitalWrite(CS_PIN, HIGH);
+    pinMode(CS_PIN, OUTPUT);
+    
+  }else{ //use as analog input!!
+    digitalWrite(CS_PIN, LOW);
+    pinMode(CS_PIN, INPUT);
+  }
 
   if(NUM_AVG > ADCEXT_AVG_MAX){
     NUM_AVG = ADCEXT_AVG_MAX;
@@ -67,39 +74,45 @@ void adcext__destroy(struct adcext *self){ //destructor
 /**************MEMBER FUNCTIONS**************************/
 void adcext__run(struct adcext *self){ //gathers samples and handles averaging
 
-//SPI Transaction
-uint8_t upperdata = 0;
-uint8_t lowerdata = 0;
-  if(self->spi_id == 1){ //use SPI1
+uint16_t thisADCdata = 0; //make variable for this sample
 
-    digitalWrite(self->ADC_CS, HIGH);
-    SPI1.beginTransaction(SPISettings(ADCEXT_SPI_CLK, MSBFIRST, SPI_MODE0)); //Fire up SPI interface, defined in adcext.h (14Max)
-    digitalWrite(self->ADC_CS, LOW);
-    upperdata = SPI1.transfer((uint8_t) 0x00); //Send 0 while reading a byte
-    lowerdata = SPI1.transfer((uint8_t) 0x00); //Send 0 while reading a byte
-    digitalWrite(self->ADC_CS, HIGH);
-    SPI1.endTransaction();
-
+if(self->spi_id >0){ //SPI ADC
+  //SPI Transaction
+  uint8_t upperdata = 0;
+  uint8_t lowerdata = 0;
+    if(self->spi_id == 1){ //use SPI1
+  
+      digitalWrite(self->ADC_CS, HIGH);
+      SPI1.beginTransaction(SPISettings(ADCEXT_SPI_CLK, MSBFIRST, SPI_MODE0)); //Fire up SPI interface, defined in adcext.h (14Max)
+      digitalWrite(self->ADC_CS, LOW);
+      upperdata = SPI1.transfer((uint8_t) 0x00); //Send 0 while reading a byte
+      lowerdata = SPI1.transfer((uint8_t) 0x00); //Send 0 while reading a byte
+      digitalWrite(self->ADC_CS, HIGH);
+      SPI1.endTransaction();
+  
+      
+    }else{ //use SPI(0)
+  
+      digitalWrite(self->ADC_CS, HIGH);
+      SPI.beginTransaction(SPISettings(ADCEXT_SPI_CLK, MSBFIRST, SPI_MODE0)); //Fire up SPI interface, defined in adcext.h (14Max)
+      digitalWrite(self->ADC_CS, LOW);
+      upperdata = SPI.transfer((uint8_t) 0x00); //Send 0 while reading a byte
+      lowerdata = SPI.transfer((uint8_t) 0x00); //Send 0 while reading a byte
+      digitalWrite(self->ADC_CS, HIGH);
+      SPI.endTransaction();
+    }
+  
+    //Serial.printf("SPIID: %i. Upper: %i. Lower: %i.\n", self->spi_id, upperdata, lowerdata);
+  
+    uint16_t data = (upperdata<<8)+lowerdata;
+  
+  //#TODO: make work for bit counts other than 10!
+    //Serial.print("Raw Data: "); Serial.println(data);
+    thisADCdata = ((data&0x3FFF)>>(14-ADCEXT_NUM_BITS)); // scale 16bit to N-bit
     
-  }else{ //deafult to SPI(0)
-
-    digitalWrite(self->ADC_CS, HIGH);
-    SPI.beginTransaction(SPISettings(ADCEXT_SPI_CLK, MSBFIRST, SPI_MODE0)); //Fire up SPI interface, defined in adcext.h (14Max)
-    digitalWrite(self->ADC_CS, LOW);
-    upperdata = SPI.transfer((uint8_t) 0x00); //Send 0 while reading a byte
-    lowerdata = SPI.transfer((uint8_t) 0x00); //Send 0 while reading a byte
-    digitalWrite(self->ADC_CS, HIGH);
-    SPI.endTransaction();
-
-  }
-
-  //Serial.printf("SPIID: %i. Upper: %i. Lower: %i.\n", self->spi_id, upperdata, lowerdata);
-
-  uint16_t data = (upperdata<<8)+lowerdata;
-
-//#TODO: make work for bit counts other than 10!
-  //Serial.print("Raw Data: "); Serial.println(data);
-  uint16_t thisADCdata = ((data&0x3FFF)>>(14-ADCEXT_NUM_BITS)); // scale 16bit to 10bit
+}else{//analog ADC
+  thisADCdata = analogRead(self->ADC_CS); //read Analog pin
+}
 
 //Averaging
 

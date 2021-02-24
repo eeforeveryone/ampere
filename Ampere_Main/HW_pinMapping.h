@@ -164,8 +164,48 @@
 
 #ifdef HW_REV__AMP03_A //Community Edition
   #define MAIN_LED_PIN 2 //pin for debug led
-  #define NUM_LOADS 2 //number of electronic loads
+  #define NUM_LOADS 1 //number of electronic loads
+  
+  //====== AMP1 SETUP =======================//
+    //====== ADC SETUP =======================//
+    #define MAIN_VADC1_CS 21 //ALG pin for Voltage ADC is pin 21
+    #define MAIN_VADC1_VREF_mV 3300 //reference voltage for Vadc
+    #define MAIN_VADC1_CUSTOM_SCALE 41.0 //custom scaliing factor to translate voltage to volts in
+    
+    #define MAIN_IADC1_CS 20 // ALG pin for Current ADC is pin 20 
+    #define MAIN_IADC1_VREF_mV 3300 //reference voltage for Iadc
+    #define MAIN_IADC1_CUSTOM_SCALE 4.545454 //custom scaliing factor to translate voltage to amps in
+  
+    #define MAIN_ADC1_BITS 10 //max counts for the ADCs on this hardware
 
+    #define MAIN_ADC1_SPIID -1 //-1 = analog input
+    //====== ADC SETUP =======================//
+    //====== DAC SETUP =======================//
+    #define MAIN_DAC1_CS 10 //CS for DAC is on pin 10
+    #define MAIN_DAC1_VREF_mV 3300 //reference voltage for DAC
+    #define MAIN_DAC1_CUSTOM_SCALE 0.22059 //scaling factor to translate Vout into Iout //255 = 11,000mA ... 3300/11,000 = 0.3 //....setCustom is now in mA
+    
+    #define MAIN_DAC1_BITS 12
+    //====== DAC SETUP =======================//
+  //====== AMP1 SETUP =======================//
+  
+  //====== UI SETUP ========================//
+  #define MAIN_OPT1_PIN 9 //digital pin definition
+  #define MAIN_OPT2_PIN 1 //digital pin definition
+  #define MAIN_OPT3_PIN 0 //digital pin definition
+
+  #define MAIN_USBDET_N 14 //low = USB Control Plugged in... high = unplugged
+  
+  #define MAIN_DOWN_PIN 3 //digital pin definition
+  #define MAIN_ENTER_PIN 5 //digital pin definition
+  #define MAIN_UP_PIN 8 //digital pin definition
+
+  #define MAIN_ENC_SW_PIN 4 //digital pin
+  #define MAIN_ENC_A_PIN 7 //digital pin
+  #define MAIN_ENC_B_PIN 6 //digital pin
+  
+  #define MAIN_AMP1_SPIID         0 //use SPI
+  //====== UI SETUP ========================//
   //====== ELECT. LIMITS====================//
   #define MAIN_IMAX 10000   //10,000 mA (10A)
   #define MAIN_VMAX 60000   //60,000 mV (60V)

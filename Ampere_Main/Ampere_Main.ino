@@ -1,5 +1,5 @@
 // Ampere Main Project
-// Electronic Load Firmware v1.01
+// Electronic Load Firmware v1.02
 // EEforEveryone - 2020
 //This software performs the functions defined in the release notes below:
 
@@ -23,6 +23,9 @@
 //  Control via. Serial Protocol                                        //
 //                                                                      //
 //                                                                      //
+// V1.02 - Ampere CE Update:                                            //
+//  Added Support for Community Edition                                 //
+//  Added Support for Encoder Control during Run & Set Modes            //
 //                                                                      //
 //                                                                      //
 // Planned for a Future Release:                                        //
@@ -44,7 +47,7 @@
 //  Debug & Prototype Future Release Functions!
 // Implement MAIN_USBDET_N COM Release!
 
-#define MAIN_VERSION_STRING "Ampere V1.01_Develop"
+#define MAIN_VERSION_STRING "Ampere V1.02_Develop"
 
 
 ///////////////////////////////////////
@@ -56,6 +59,7 @@
 #include "SSD1306Ascii.h"
 #include "SSD1306AsciiWire.h"
 
+
 #include "amp01.h" //Ampere Front-End Object
 #include "ampgui.h" //high level GUI object
 #include "dbgled.h" //debug led object
@@ -64,9 +68,9 @@
 
 #include "ampserial.h" //Serial Control object
 
-#define HW_REV__AMP01_A   //This is the dev kit
+//#define HW_REV__AMP01_A   //This is the dev kit
 //#define HW_REV__AMP02_A     //This is the 4-up Controller
-//#define HW_REV__AMP03_A   //This is the Community Edition Controller!
+#define HW_REV__AMP03_A   //This is the Community Edition Controller!
 #include "HW_pinMapping.h" //Configure Pins
 
 //#define PRINT_DEBUG true //set true when debug com port active
@@ -89,6 +93,8 @@ struct amp01* myLoad[NUM_LOADS]; //object for front ends
 struct adcext* vadc[NUM_LOADS]; //objects for front end child objects (testing memory weirdness
 struct adcext* iadc[NUM_LOADS];
 struct dacext* dac[NUM_LOADS];
+
+Encoder mainENC(MAIN_ENC_A_PIN, MAIN_ENC_B_PIN); //create encoder object
 
 
 
@@ -263,6 +269,33 @@ void setup() {
       
       delay(50); oled.print('.');
   #endif
+  #ifdef HW_REV__AMP03_A
+    //SPI.setCS(-1);
+    //SPI.setSCK(13);
+    //SPI.setMISO(12);
+    //SPI.setMOSI(11);
+    SPI.begin(); //Start up SPI for dac!
+    
+    #ifdef PRINT_DEBUG
+      Serial.println("Start Load 1!");
+    #endif
+
+    vadc[0] = adcext__create(MAIN_VADC1_CS, MAIN_ADC_OVERSAMPLE, MAIN_VADC1_VREF_mV, 1024, MAIN_ADC1_SPIID); //constructor, use internal ADC
+    adcext__setCustom(vadc[0], MAIN_VADC1_CUSTOM_SCALE); //set custom scaling factor to 41.0 (vin - milliVolts)
+    iadc[0] = adcext__create(MAIN_IADC1_CS, MAIN_ADC_OVERSAMPLE, MAIN_IADC1_VREF_mV, 1024, MAIN_ADC1_SPIID); //constructor, use internal ADC
+    adcext__setCustom(iadc[0], MAIN_IADC1_CUSTOM_SCALE); //set custom scaling factor to translate mv into milliamps)
+    dac[0] = dacext__create(MAIN_DAC1_CS, MAIN_DAC1_VREF_mV, MAIN_DAC1_BITS, MAIN_AMP1_SPIID); //(CS, Vref, number_bits, SPI_HW id);
+    dacext__setCustomFactor(dac[0], MAIN_DAC1_CUSTOM_SCALE); 
+    myLoad[0] = amp01__create(vadc[0], iadc[0], dac[0], MAIN_IMAX, MAIN_VMAX, MAIN_PMAX); //constructor
+
+
+    #ifdef PRINT_DEBUG
+      Serial.println("Start Encoder!");
+    #endif
+    ampgui__startEncoder(mygui, &mainENC, MAIN_ENC_SW_PIN); //start encoder
+   
+      
+  #endif
     
 
   pc = ampserial__create(NUM_LOADS); //Create serial control object!
@@ -416,14 +449,7 @@ void loop() {
               dbgled__error(led); //change debug led mode to error
           break;
         }
-  
-        ampgui__set(mygui, amp01__GetVout(thisload)/1000.0, amp01__GetIout(thisload)/1000.0, amp01__GetRout(thisload)/1000.0, amp01__GetPout(thisload)/1000.0, amp01__GetEout(thisload)/1000000.0); //Display Live Readouts
-       
-          
-      }else{ //allow change settings
-        
-        amp01__DisableOutput(thisload); //turns off output
-  
+
         switch(ampgui__getMode(mygui)){              //Change Regulation Setpoints
         case AMPGUI_SEL_V: //regulate Volts
           set_volt_milli[thisCH_sel] = ampgui__getSetValue(mygui);
@@ -443,6 +469,34 @@ void loop() {
   
         break;
       }
+  
+        ampgui__set(mygui, amp01__GetVout(thisload)/1000.0, amp01__GetIout(thisload)/1000.0, amp01__GetRout(thisload)/1000.0, amp01__GetPout(thisload)/1000.0, amp01__GetEout(thisload)/1000000.0); //Display Live Readouts
+       
+          
+      }else{ //wait
+        
+        amp01__DisableOutput(thisload); //turns off output
+
+        switch(ampgui__getMode(mygui)){              //Change Regulation Setpoints
+        case AMPGUI_SEL_V: //regulate Volts
+          set_volt_milli[thisCH_sel] = ampgui__getSetValue(mygui);
+        break;
+        case AMPGUI_SEL_I: //regulate Amps
+          set_amp_milli[thisCH_sel] = ampgui__getSetValue(mygui);
+        break;
+        case AMPGUI_SEL_R:
+          set_ohm_milli[thisCH_sel] = ampgui__getSetValue(mygui);
+        break;
+        case AMPGUI_SEL_P:
+          set_watt_milli[thisCH_sel] = ampgui__getSetValue(mygui);
+        break;
+        default:
+        //ERROR! #todo: something
+        dbgled__error(led); //change debug led mode to error
+  
+        break;
+      }
+  
         dbgled__idle(led); //change debug led mode to idle
         ampgui__set(mygui, set_volt_milli[thisCH_sel]/1000.0, set_amp_milli[thisCH_sel]/1000.0, set_ohm_milli[thisCH_sel]/1000.0, set_watt_milli[thisCH_sel]/1000.0, amp01__GetEout(thisload)/1000000.0); //Display Current Settings
       }

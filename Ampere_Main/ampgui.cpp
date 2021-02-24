@@ -42,6 +42,9 @@ struct ampgui{
   int title_length;
 
   uint32_t selection_value_milli;
+  uint32_t encoder_increment;
+  uint32_t lastEncoderVal;
+  Encoder *mainENC;
   uint16_t button_input_mode[AMPGUI_MAXPOSSIBLECHANNELS+1]; //AMPGUI_BUTTON_NORMAL || AMPGUI_BUTTON_SET || AMPGUI_BUTTON_RUN //one per channel, zero index not used
   
   uint8_t MAX_CHANNEL_NUM;
@@ -55,6 +58,8 @@ struct ampgui{
   int DOWN_PIN;
   int ENTER_PIN;
   int UP_PIN;
+
+  int ENC_PIN;
 
 };
 
@@ -160,11 +165,27 @@ for(int i = 0; i<AMPGUI_NUM_BUTTONS; i++){ //reset all buttons
   
 
   self->selection_value_milli = 0;
+  self->encoder_increment = 10; //increment used for encoder
+  Encoder temp(-1,-1);
+  self->mainENC =  &temp;// start encoder
+  self->ENC_PIN = -1;
+  self->lastEncoderVal = self->mainENC->read();
+  
 
   for(int i = 0; i<(AMPGUI_MAXPOSSIBLECHANNELS+1); i++){
     self->button_input_mode[i] = AMPGUI_BUTTON_NORMAL; //AMPGUI_BUTTON_NORMAL || AMPGUI_BUTTON_SET || AMPGUI_BUTTON_RUN
   }
  
+}
+
+void ampgui__startEncoder(struct ampgui *self, Encoder *enc, int button){ //start encoder
+  self->encoder_increment = 10; //increment used for encoder
+  self->mainENC = enc; //store encoder
+  self->lastEncoderVal = self->mainENC->read();
+
+  
+  self->ENC_PIN = button;
+  pinMode(self->ENC_PIN, INPUT_PULLUP);
 }
 
 void ampgui__destroy(struct ampgui *self){ //destructor
@@ -197,6 +218,7 @@ void ampgui__update(struct ampgui *self, uint32_t ms, bool passive){ //Reacts to
     ampgui__button_update(self, AMPGUI_UP     , digitalRead(self->UP_PIN)); 
     ampgui__button_update(self, AMPGUI_DOWN   , digitalRead(self->DOWN_PIN)); 
     ampgui__button_update(self, AMPGUI_ENTER  , digitalRead(self->ENTER_PIN)); 
+    ampgui__button_update(self, AMPGUI_ENC    , digitalRead(self->ENC_PIN));
 
 
     //TODO: Input Validation?
@@ -267,6 +289,44 @@ void ampgui__update(struct ampgui *self, uint32_t ms, bool passive){ //Reacts to
             self->selection_value_milli = 0;
           }
         }
+        
+        if(ampgui__button_getPush(self, AMPGUI_ENC)){          //ENCODER BUTTON PRESSESD
+          switch (self->encoder_increment){
+            case 10:
+              self->encoder_increment = 100;
+              break;
+            case 100:
+              self->encoder_increment = 1000;
+              break;
+            default:
+              self->encoder_increment = 10;
+              break;
+              
+          }
+
+        }
+
+        if(self->lastEncoderVal != self->mainENC->read()){       //ENCODER VALUE CHANGED!!
+          int temp = (self->mainENC->read() - self->lastEncoderVal); //record difference!
+          self->lastEncoderVal = self->mainENC->read(); //remember new value!
+
+
+          if(temp >0){
+            self->selection_value_milli = self->selection_value_milli + (temp*self->encoder_increment/4); //move setpoint up!
+          }else if (temp < 0){
+            temp = temp *-1; //invert
+            self->selection_value_milli = self->selection_value_milli - (temp*self->encoder_increment/4); //move setpoint down!
+          }
+          
+
+          if(self->selection_value_milli > (AMPGUI_OUTPUT_MAX+2000)){ //reset on overflow (temp is positive)
+            self->selection_value_milli = 0;
+          }
+          else if(self->selection_value_milli > AMPGUI_OUTPUT_MAX){ //reset on overflow (temp is positive)
+            self->selection_value_milli = AMPGUI_OUTPUT_MAX;
+          }
+          
+        }
   
         if(ampgui__button_getPush(self, AMPGUI_ENTER)){           //ENTER BUTTON PRESSESD
           self->button_input_mode[self->ChannelSelection] = AMPGUI_BUTTON_NORMAL;            //CHANGE INPUT MODE to  "AMPGUI_BUTTON_NORMAL"
@@ -274,6 +334,7 @@ void ampgui__update(struct ampgui *self, uint32_t ms, bool passive){ //Reacts to
   
         if(ampgui__button_getHold(self, AMPGUI_ENTER)){         //ENTER BUTTON HELD #TODO: This may flicker between set and normal for a while. Fix!
           self->button_input_mode[self->ChannelSelection] = AMPGUI_BUTTON_RUN;          //CHANGE INPUT MODE to  "AMPGUI_BUTTON_RUN"
+          self->encoder_increment = 10; //default to 10munit increment in run mode!
         }
   
       break;
@@ -285,6 +346,43 @@ void ampgui__update(struct ampgui *self, uint32_t ms, bool passive){ //Reacts to
   
         if(ampgui__button_getPush(self, AMPGUI_ENTER)){           //ENTER BUTTON PRESSESD
           self->button_input_mode[self->ChannelSelection] = AMPGUI_BUTTON_NORMAL;            //CHANGE INPUT MODE to  "AMPGUI_BUTTON_NORMAL"
+        }
+
+        if(ampgui__button_getPush(self, AMPGUI_ENC)){          //ENCODER BUTTON PRESSESD
+          switch (self->encoder_increment){
+            case 0:
+              self->encoder_increment = 10;
+              break;
+            case 10:
+              self->encoder_increment = 100;
+              break;
+            default:
+              self->encoder_increment = 0;
+              break;
+              
+          }
+
+        }
+
+        if(self->lastEncoderVal != self->mainENC->read()){       //ENCODER VALUE CHANGED!!
+          int temp = (self->mainENC->read() - self->lastEncoderVal); //record difference!
+          self->lastEncoderVal = self->mainENC->read(); //remember new value!
+
+
+          if(temp >0){
+            self->selection_value_milli = self->selection_value_milli + (temp*self->encoder_increment/4); //move setpoint up!
+          }else if (temp < 0){
+            temp = temp *-1; //invert
+            self->selection_value_milli = self->selection_value_milli - (temp*self->encoder_increment/4); //move setpoint down!
+          }
+          
+
+          if(self->selection_value_milli > (AMPGUI_OUTPUT_MAX+2000)){ //reset on overflow (temp is positive)
+            self->selection_value_milli = 0;
+          }
+          else if(self->selection_value_milli > AMPGUI_OUTPUT_MAX){ //reset on overflow (temp is positive)
+            self->selection_value_milli = AMPGUI_OUTPUT_MAX;
+          }
         }
   
       break;
