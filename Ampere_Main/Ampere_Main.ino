@@ -10,7 +10,7 @@
 // Testing Working:                                                     //
 //  Current Regulation (Programmable)                                   //
 //  Change Settings via Button Interface                                //
-//  Coloumb Counting                                                    //
+//  Coulomb Counting                                                    //
 //  Resistance Measurement                                              //
 //  Voltage Measurement                                                 //
 //                                                                      //
